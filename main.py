@@ -2,6 +2,7 @@ import os
 import telebot
 from telebot import types
 
+# Получаем токен бота из переменной окружения BOT_TOKEN
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -33,4 +34,5 @@ def start(msg):
             reply_markup=keyboard
         )
 
-bot.polling(none_stop=True)
+# Основной запуск бота для Render
+bot.infinity_polling()
