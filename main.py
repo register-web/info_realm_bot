@@ -1,38 +1,33 @@
 import os
-import telebot
-from telebot import types
+from aiohttp import web
+from bot import bot, dp
+from webhook import handle_webhook
+import handlers.basic  # подключаем хендлеры
 
-# Получаем токен бота из переменной окружения BOT_TOKEN
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(BOT_TOKEN)
 
-@bot.message_handler(commands=['start'])
-def start(msg):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(
-        types.InlineKeyboardButton(
-            text="инфа и как попасть на сервер",
-            url="https://realm-webapp.vercel.app/"
-        )
-    )
+async def on_startup(app: web.Application) -> None:
+    webhook_base = os.getenv("WEBHOOK_BASE")
+    if not webhook_base:
+        raise RuntimeError("WEBHOOK_BASE is not set")
 
-    text = (
-        "Welcome to Realm!🎉🎉🎉\n\n"
-        "Realm — майнкрафт проект/сервер, нацеленный на убийство вашего свободного времени☺️\n\n"
-        "Если кратко:\n"
-        "интересно повыживать как в обычных дружеских играх на недельку,\n"
-        "только с минимальными ограничениями для поддержки сервера,\n"
-        "без донатов, без читов, без команд.\n\n"
-        "Чистая ванилка 🍀"
-    )
+    webhook_url = f"{webhook_base.rstrip('/')}/webhook"
 
-    with open("info_foto.png", "rb") as photo:
-        bot.send_photo(
-            msg.chat.id,
-            photo,
-            caption=text,
-            reply_markup=keyboard
-        )
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.set_webhook(webhook_url)
 
-# Основной запуск бота для Render
-bot.infinity_polling()
+
+async def on_cleanup(app: web.Application) -> None:
+    await bot.session.close()
+
+
+def create_app() -> web.Application:
+    app = web.Application()
+    app.router.add_post("/webhook", handle_webhook)
+    app.on_startup.append(on_startup)
+    app.on_cleanup.append(on_cleanup)
+    return app
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8080))
+    web.run_app(create_app(), host="0.0.0.0", port=port)

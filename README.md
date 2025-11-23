@@ -1,12 +1,18 @@
-# Telegram Bot for Render
+# Aiogram Telegram Bot for Render (Webhook)
 
-This bot runs on Render.com using Python and TeleBot (pyTelegramBotAPI).
-Do NOT hardcode your bot token anywhere in the project.
-Instead, open your Render service → Environment → Add Environment Variable:
+## Running locally
+1. Export environment variables:
+   - `BOT_TOKEN` — Telegram bot token
+   - `WEBHOOK_BASE` — public URL that Telegram can reach (e.g., from ngrok)
+2. Start the app:
+   ```bash
+   python main.py
+   ```
 
-BOT_TOKEN=your_telegram_token
+## Deploying to Render
+- No custom start command required; Render will use the Docker `CMD` defined in `Dockerfile` (`python main.py`).
+- Set environment variables in Render:
+  - `BOT_TOKEN=your_telegram_token`
+  - `WEBHOOK_BASE=https://<your-render-service>.onrender.com`
 
-Then redeploy your service.
-
-Start Command on Render:
-python3 main.py
+The bot works **only via webhooks**. On startup it deletes the previous webhook and sets a new one to `${WEBHOOK_BASE}/webhook`.
